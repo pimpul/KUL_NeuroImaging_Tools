@@ -5,6 +5,8 @@
 # v0.2a - dd 12/12/2018 - preparing for beta release 0.2
 v="v0.2 - dd 19/12/2018"
 
+# set -x
+
 freesurfer_license=/KUL_apps/freesurfer/license.txt
 
 # This is the main script of the KUL_NeuroImaging_Toools
@@ -198,7 +200,7 @@ if [ ! -f $fmriprep_file_to_check ]; then
  --notrack \
  /data /out \
  participant \
- > $fmriprep_log  2>&1") 
+ > $fmriprep_log  2>&1 ") 
 
     echo "   using cmd: $task_fmriprep_cmd"
 
@@ -209,7 +211,7 @@ if [ ! -f $fmriprep_file_to_check ]; then
 
     sleep 2
     
-    #kul_e2cl "   done fmriprep on participant $BIDS_participant" $log
+    kul_e2cl "   done fmriprep on participant $BIDS_participant" $log
 
 else
         
@@ -296,7 +298,7 @@ if [ ! -f  $dwiprep_file_to_check ]; then
 
     kul_e2cl " started (in parallel) KUL_dwiprep on participant ${BIDS_participant}... (using $ncpu_dwiprep cores, logging to $dwiprep_log)" ${log}
 
-    local task_dwiprep_cmd=$(echo "KUL_dwiprep.sh -p ${BIDS_participant} -n $ncpu_dwiprep -d $dwipreproc_options -e \"${eddy_options} \" -v \
+    local task_dwiprep_cmd=$(echo "KUL_dwiprep.sh -p ${BIDS_participant} -n 8 -d $dwipreproc_options -e \"${eddy_options} \" -v \
  > $dwiprep_log 2>&1 ")
 
     echo "   using cmd: $task_dwiprep_cmd"

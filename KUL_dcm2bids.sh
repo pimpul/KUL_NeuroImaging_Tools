@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 # Bash shell script to convert dicoms to bids format
 #
 # Requires dcm2bids (jooh fork), dcm2niix, Mrtrix3
@@ -961,8 +961,8 @@ full_intended_for_string=""
 if [[ ${fmap_task} ]] ; then 
 
     for intended_task in "${intended_tasks_array[@]}"; do
-        echo $intended_task
-        echo $cwd
+        echo ${intended_task}
+        # echo ${cwd}
         search_runs_of_task=($(find ${cwd}/${bids_output}/sub-${subj}/func -type f | grep task-${intended_task} | grep nii.gz))
         echo ${search_runs_of_task[@]}
 
@@ -994,11 +994,11 @@ if [[ ${fmap_task} ]] ; then
 
     if [[ $sess = "" ]]; then
 
-        perl  -pi -e "s/\"##REPLACE_ME_INTENDED_FOR##\"/${full_intended_for_string}/g" ${bids_output}/sub-${subj}/fmap/sub-${subj}_fieldmap.json
+        perl  -pi -e "s/\"##REPLACE_ME_INTENDED_FOR##\"/${full_intended_for_string}/g" ${cwd}/${bids_output}/sub-${subj}/fmap/sub-${subj}_fieldmap.json
                     
     else
 
-        perl  -pi -e "s/\"##REPLACE_ME_INTENDED_FOR##\"/${full_intended_for_string}/g" ${bids_output}/sub-${subj}/ses-${sess}/fmap/sub-${subj}_fieldmap.json
+        perl  -pi -e "s/\"##REPLACE_ME_INTENDED_FOR##\"/${full_intended_for_string}/g" ${cwd}/${bids_output}/sub-${subj}/ses-${sess}/fmap/sub-${subj}_fieldmap.json
                     
     fi
 
@@ -1008,13 +1008,26 @@ else
 
 fi
 
+# copying task based events.tsv to BIDS directory
+if [ $events_flag -eq 1 ]; then
+    test_events_exist=$(ls -l ${cwd}/*conf*/task-*_events.tsv | grep "No such file")
+    echo $test_events_exist
+    if [[ "$test_events_exist" -eq "" ]]; then
+        kul_e2cl "Copying task based events.tsv to BIDS directory" $log
+        cp ${cwd}/*conf*/task-*_events.tsv $cwd/${bids_output}
+    fi  
+fi
+
+echo " we are between copying tasks event files and cleanup "
 
 # clean up
 cleanup="rm -fr ${tmp}"
-echo ${cleanup}
+# echo ${cleanup}
 eval ${cleanup}
 
 # Fix README BIDS validation
-echo "This BIDS was made using KUL_NeuroImagingTools" >> ${bids_output}/README
+echo "This BIDS was made using KUL_NeuroImagingTools" >> ${cwd}/${bids_output}/README
+
+echo " we are after cleanup and README fix"
 
 kul_e2cl "Finished $script" $log

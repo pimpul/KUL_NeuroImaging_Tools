@@ -690,17 +690,19 @@ function kul_mrtrix_FT {
 					
 					fslmaths tracts_${a}/${tract}.nii.gz -thr $thr -s 1.5 -thr 0.2 -bin tracts_${a}/${tract}_bin_mask.nii.gz
 
-					fslmaths tracts_${a}/${tract}_bin_mask.nii.gz $filter -mas $ants_mask -bin -mas $ants_CSF_binv tracts_${a}/${tract}_filter_mask.nii.gz
+					fslmaths tracts_${a}/${tract}_bin_mask.nii.gz $filter -mas $ants_mask -bin -mas $ants_CSF_binv tracts_${a}/${tract}_raw_filter_mask.nii.gz
 					
+					ImageMath 3  tracts_${a}/${tract}_clean_filter_mask.nii.gz GetLargestComponent tracts_${a}/${tract}_raw_filter_mask.nii.gz
+
 					# here we add tckedit with the resulting thresholded prob mask for filtered bundles
 					# trying tract mask as include with brain mask rather than using the tract mask as -mask
 					if echo "$tract" | grep "_R_" > /dev/null 2>&1 ; then 
 						echo "it's right sided"
-						tckedit -number $nods -include roi/WM_fs_R.nii.gz $i $e $min_L -mask tracts_${a}/${tract}_filter_mask.nii.gz -nthreads $ncpu -force \
+						tckedit -number $nods -include roi/WM_fs_R.nii.gz $i $e $min_L -mask tracts_${a}/${tract}_clean_filter_mask.nii.gz -nthreads $ncpu -force \
 							tracts_${a}/${tract}.tck tracts_${a}/${tract}_filt.tck
 					elif echo "$tract" | grep "_L_" > /dev/null 2>&1 ; then 
 						 echo "it's left sided"
- 						tckedit -number $nods -include roi/WM_fs_L.nii.gz $i $e $min_L -mask tracts_${a}/${tract}_filter_mask.nii.gz -nthreads $ncpu -force \
+ 						tckedit -number $nods -include roi/WM_fs_L.nii.gz $i $e $min_L -mask tracts_${a}/${tract}_clean_filter_mask.nii.gz -nthreads $ncpu -force \
  							tracts_${a}/${tract}.tck tracts_${a}/${tract}_filt.tck
 					fi
 					
@@ -728,13 +730,13 @@ function kul_mrtrix_FT {
 							fslmaths tracts_${a}/CST_L_nods${nods2}.nii.gz -thr $thr_CST_L -s 1.5 -thr 0.2 -bin tracts_${a}/CST_L_nods${nods2}_bin_mask.nii.gz
 							fslmaths tracts_${a}/CST_L_nods${nods2}_bin_mask.nii.gz -add roi/BStem.nii.gz -add roi/M1_wm_fs_L.nii.gz \
 								-add roi/S1_wm_fs_L.nii.gz -add roi/LT_CST_JHU_roi_native.nii.gz -mas $ants_mask -bin -mas $ants_CSF_binv \
-									tracts_${a}/CST_L_nods${nods2}_filter_mask.nii.gz
+									tracts_${a}/CST_L_nods${nods2}_clean_filter_mask.nii.gz
 							# filter L_CST
 							tckedit -number ${nods2} -include roi/WM_fs_L.nii.gz -include roi/BStem.nii.gz -include roi/M1_wm_fs_L.nii.gz \
 								-include roi/S1_wm_fs_L.nii.gz -include roi/LT_CST_JHU_roi_native.nii.gz \
 									-exclude roi/WM_fs_R.nii.gz -exclude roi/CC_fs_all.nii.gz -exclude roi/LT_ML_JHU_roi_native.nii.gz \
 										-exclude roi/RT_CST_JHU_roi_native.nii.gz -exclude roi/RT_ML_JHU_roi_native.nii.gz \
-											-mask tracts_${a}/CST_L_nods${nods2}_filter_mask.nii.gz $min_L -nthreads $ncpu \
+											-mask tracts_${a}/CST_L_nods${nods2}_clean_filter_mask.nii.gz $min_L -nthreads $ncpu \
 												-force tracts_${a}/CST_L_nods${nods2}.tck tracts_${a}/CST_L_nods${nods2}_filt.tck
 						else
 				            
@@ -759,13 +761,13 @@ function kul_mrtrix_FT {
 							fslmaths tracts_${a}/ML_L_nods${nods2}.nii.gz -thr $thr_ML_L -s 1.5 -thr 0.2 -bin tracts_${a}/ML_L_nods${nods2}_bin_mask.nii.gz
 							fslmaths tracts_${a}/ML_L_nods${nods2}_bin_mask.nii.gz -add roi/BStem.nii.gz -add roi/M1_wm_fs_L.nii.gz \
 								-add roi/S1_wm_fs_L.nii.gz -add roi/LT_ML_JHU_roi_native.nii.gz -mas $ants_mask -bin -mas $ants_CSF_binv \
-									tracts_${a}/ML_L_nods${nods2}_filter_mask.nii.gz
+									tracts_${a}/ML_L_nods${nods2}_clean_filter_mask.nii.gz
 							# filter L_ML
 							tckedit -number $nods2 -include roi/WM_fs_L.nii.gz -include roi/BStem.nii.gz -include roi/M1_wm_fs_L.nii.gz \
 								-include roi/S1_wm_fs_L.nii.gz -include roi/LT_ML_JHU_roi_native.nii.gz \
 									-exclude roi/WM_fs_R.nii.gz -exclude roi/CC_fs_all.nii.gz -exclude roi/LT_CST_JHU_roi_native.nii.gz \
 										-exclude roi/RT_ML_JHU_roi_native.nii.gz -exclude roi/RT_CST_JHU_roi_native.nii.gz \
-											-mask tracts_${a}/ML_L_nods${nods2}_filter_mask.nii.gz $min_L -nthreads $ncpu \
+											-mask tracts_${a}/ML_L_nods${nods2}_clean_filter_mask.nii.gz $min_L -nthreads $ncpu \
 												-force tracts_${a}/ML_L_nods${nods2}.tck tracts_${a}/ML_L_nods${nods2}_filt.tck
 						else
 								
@@ -800,13 +802,13 @@ function kul_mrtrix_FT {
 							fslmaths tracts_${a}/CST_R_nods${nods2}.nii.gz -thr $thr_CST_R -s 1.5 -thr 0.2 -bin tracts_${a}/CST_R_nods${nods2}_bin_mask.nii.gz
 							fslmaths tracts_${a}/CST_R_nods${nods2}_bin_mask.nii.gz -add roi/BStem.nii.gz -add roi/M1_wm_fs_R.nii.gz \
 								-add roi/S1_wm_fs_R.nii.gz -add roi/RT_CST_JHU_roi_native.nii.gz -mas $ants_mask -bin -mas $ants_CSF_binv \
-									tracts_${a}/CST_R_nods${nods2}_filter_mask.nii.gz
+									tracts_${a}/CST_R_nods${nods2}_clean_filter_mask.nii.gz
 							# filter R_CST
 							tckedit -number ${nods2} -include roi/WM_fs_R.nii.gz -include roi/BStem.nii.gz -include roi/M1_wm_fs_R.nii.gz \
 								-include roi/S1_wm_fs_R.nii.gz -include roi/RT_CST_JHU_roi_native.nii.gz \
 									-exclude roi/WM_fs_L.nii.gz -exclude roi/CC_fs_all.nii.gz -exclude roi/RT_ML_JHU_roi_native.nii.gz \
 										-exclude roi/LT_CST_JHU_roi_native.nii.gz -exclude roi/LT_ML_JHU_roi_native.nii.gz \
-											-mask tracts_${a}/CST_R_nods${nods2}_filter_mask.nii.gz $min_L -nthreads $ncpu \
+											-mask tracts_${a}/CST_R_nods${nods2}_clean_filter_mask.nii.gz $min_L -nthreads $ncpu \
 												-force tracts_${a}/CST_R_nods${nods2}.tck tracts_${a}/CST_R_nods${nods2}_filt.tck
 
 						else
@@ -834,13 +836,13 @@ function kul_mrtrix_FT {
 							fslmaths tracts_${a}/ML_R_nods${nods2}.nii.gz -thr $thr_ML_R -s 1.5 -thr 0.2 -bin tracts_${a}/ML_R_nods${nods2}_bin_mask.nii.gz
 							fslmaths tracts_${a}/ML_R_nods${nods2}_bin_mask.nii.gz -add roi/BStem.nii.gz -add roi/M1_wm_fs_R.nii.gz \
 								-add roi/S1_wm_fs_R.nii.gz -add roi/RT_ML_JHU_roi_native.nii.gz -mas $ants_mask -bin -mas $ants_CSF_binv \
-									tracts_${a}/ML_R_nods${nods2}_filter_mask.nii.gz
+									tracts_${a}/ML_R_nods${nods2}_clean_filter_mask.nii.gz
 							# filter R_ML
 							tckedit -number ${nods2} -include roi/WM_fs_R.nii.gz -include roi/BStem.nii.gz -include roi/M1_wm_fs_R.nii.gz \
 								-include roi/S1_wm_fs_R.nii.gz -include roi/RT_ML_JHU_roi_native.nii.gz \
 									-exclude roi/WM_fs_L.nii.gz -exclude roi/CC_fs_all.nii.gz -exclude roi/RT_CST_JHU_roi_native.nii.gz \
 										-exclude roi/LT_ML_JHU_roi_native.nii.gz -exclude roi/LT_CST_JHU_roi_native.nii.gz \
-											-mask tracts_${a}/ML_R_nods${nods2}_filter_mask.nii.gz $min_L -nthreads $ncpu \
+											-mask tracts_${a}/ML_R_nods${nods2}_clean_filter_mask.nii.gz $min_L -nthreads $ncpu \
 												-force tracts_${a}/ML_R_nods${nods2}.tck tracts_${a}/ML_R_nods${nods2}_filt.tck
 							
 						else
@@ -924,44 +926,44 @@ kul_mrtrix_FT
 # act=()
 # kul_mrtrix_FT
 
-nods=5000
-tract="AF_R_STG_only_nods${nods}"
-seeds=("IFG_POp_wm_fs_R" "IFG_PTr_wm_fs_R" "STG_wm_fs_R")
-exclude=("WM_fs_L" "BStem" "CC_fs_all" "Ins_fs_R" "putamen_dil_fs_R" "THALAMUS_fs_R" "CSF_ants")
-theta=60
-stop=()
-act=()
-kul_mrtrix_FT
+# nods=5000
+# tract="AF_R_STG_only_nods${nods}"
+# seeds=("IFG_POp_wm_fs_R" "IFG_PTr_wm_fs_R" "STG_wm_fs_R")
+# exclude=("WM_fs_L" "BStem" "CC_fs_all" "Ins_fs_R" "putamen_dil_fs_R" "THALAMUS_fs_R" "CSF_ants")
+# theta=60
+# stop=()
+# act=()
+# kul_mrtrix_FT
 
-nods=5000
-tract="AF_L_STG_only_nods${nods}"
-seeds=("IFG_POp_wm_fs_L" "IFG_PTr_wm_fs_L" "STG_wm_fs_L")
-exclude=("WM_fs_R" "BStem" "CC_fs_all" "Ins_fs_L" "putamen_dil_fs_L" "THALAMUS_fs_L" "CSF_ants")
-theta=60
-stop=()
-act=()
-kul_mrtrix_FT
+# nods=5000
+# tract="AF_L_STG_only_nods${nods}"
+# seeds=("IFG_POp_wm_fs_L" "IFG_PTr_wm_fs_L" "STG_wm_fs_L")
+# exclude=("WM_fs_R" "BStem" "CC_fs_all" "Ins_fs_L" "putamen_dil_fs_L" "THALAMUS_fs_L" "CSF_ants")
+# theta=60
+# stop=()
+# act=()
+# kul_mrtrix_FT
 
-# CST
-# we'll use the S1 and M1 + BStem as seeds
-# contrateral cerebral WM and CC as excludes
-nods=20000
-tract="CSTML_all_R_nods${nods}"
-seeds=("BStem" "S1_wm_fs_R" "M1_wm_fs_R")
-exclude=("WM_fs_L" "CC_fs_all" "Amyg_fs_R")
-theta=60
-stop=$(printf " -backtrack -crop_at_gmwmi")
-act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# # CST
+# # we'll use the S1 and M1 + BStem as seeds
+# # contrateral cerebral WM and CC as excludes
+# nods=20000
+# tract="CSTML_all_R_nods${nods}"
+# seeds=("BStem" "S1_wm_fs_R" "M1_wm_fs_R")
+# exclude=("WM_fs_L" "CC_fs_all" "Amyg_fs_R")
+# theta=60
+# stop=$(printf " -backtrack -crop_at_gmwmi")
+# act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-nods=20000
-tract="CSTML_all_L_nods${nods}"
-seeds=("BStem" "S1_wm_fs_L" "M1_wm_fs_L")
-exclude=("WM_fs_R" "CC_fs_all" "Amyg_fs_L")
-theta=60
-stop=$(printf " -backtrack -crop_at_gmwmi")
-act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# nods=20000
+# tract="CSTML_all_L_nods${nods}"
+# seeds=("BStem" "S1_wm_fs_L" "M1_wm_fs_L")
+# exclude=("WM_fs_R" "CC_fs_all" "Amyg_fs_L")
+# theta=60
+# stop=$(printf " -backtrack -crop_at_gmwmi")
+# act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
 # nods=8000
 # tract="pcCST_L_nods${nods}"
@@ -981,86 +983,86 @@ kul_mrtrix_FT
 # act=()
 # kul_mrtrix_FT
 
-# SMA_PMC
-nods=10000
-tract="SMA_PMC_R_nods${nods}"
-seeds=("SMA_and_PMC_fs_R" "BStem")
-exclude=("WM_fs_L" "CC_fs_all")
-theta=50
-stop=$(printf " -backtrack -crop_at_gmwmi")
-act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
-
-nods=10000
-tract="SMA_PMC_L_nods${nods}"
-seeds=("SMA_and_PMC_fs_L" "BStem")
-exclude=("WM_fs_R" "CC_fs_all")
-theta=50
-stop=$(printf " -backtrack -crop_at_gmwmi")
-act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
-
-# FAT
-nods=6000
-tract="FAT_L_nods${nods}"
-seeds=("IFG_POp_wm_fs_L" "SFG_fs_L")
-exclude=("IFG_PTr_wm_fs_L" "M1_fs_L" "WM_fs_R" "CC_fs_all" "Ins_fs_L" "putamen_dil_fs_L")
-theta=60
-stop=$(printf " -backtrack -crop_at_gmwmi")
-act=$(printf " -act %s" "${fs_5tt[@]}")
+# # SMA_PMC
+# nods=10000
+# tract="SMA_PMC_R_nods${nods}"
+# seeds=("SMA_and_PMC_fs_R" "BStem")
+# exclude=("WM_fs_L" "CC_fs_all")
+# theta=50
+# stop=$(printf " -backtrack -crop_at_gmwmi")
 # act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# kul_mrtrix_FT
 
-nods=6000
-tract="FAT_R_nods${nods}"
-seeds=("IFG_POp_wm_fs_R" "SFG_fs_R")
-exclude=("IFG_PTr_wm_fs_R" "M1_fs_R" "WM_fs_L" "CC_fs_all" "Ins_fs_R" "putamen_dil_fs_R")
-theta=60
-stop=$(printf " -backtrack -crop_at_gmwmi")
-act=$(printf " -act %s" "${fs_5tt[@]}")
+# nods=10000
+# tract="SMA_PMC_L_nods${nods}"
+# seeds=("SMA_and_PMC_fs_L" "BStem")
+# exclude=("WM_fs_R" "CC_fs_all")
+# theta=50
+# stop=$(printf " -backtrack -crop_at_gmwmi")
 # act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
-#
-# ATR
-# exclude the hippocampi, insulae, par and temp wm as well as vDC
-# try using -stop and -act
-nods=3000
-tract="ATR_R_nods${nods}"
-seeds=("THALAMUS_fs_R" "L_OF_wm_fs_R")
-exclude=("BStem" "WM_fs_L" "CC_fs_all" "Temp_wm_fs_R" "putamen_dil_fs_R" "Ins_wm_fs_R" "vDC_fs_R")
-theta=50
-stop=$(printf " -backtrack -crop_at_gmwmi")
-act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# kul_mrtrix_FT
 
-nods=3000
-tract="ATR_L_nods${nods}"
-seeds=("THALAMUS_fs_L" "L_OF_wm_fs_L")
-exclude=("BStem" "WM_fs_R" "CC_fs_all" "Temp_wm_fs_L" "putamen_dil_fs_L" "Ins_wm_fs_L" "vDC_fs_L")
-theta=50
-stop=$(printf " -backtrack -crop_at_gmwmi")
-act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# # FAT
+# nods=6000
+# tract="FAT_L_nods${nods}"
+# seeds=("IFG_POp_wm_fs_L" "SFG_fs_L")
+# exclude=("IFG_PTr_wm_fs_L" "M1_fs_L" "WM_fs_R" "CC_fs_all" "Ins_fs_L" "putamen_dil_fs_L")
+# theta=60
+# stop=$(printf " -backtrack -crop_at_gmwmi")
+# act=$(printf " -act %s" "${fs_5tt[@]}")
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-# STR
-# needs occ wm and vDC as excludes still
-nods=3000
-tract="STR_R_nods${nods}"
-seeds=("THALAMUS_fs_R" "Par_wm_fs_R" "SPL_fs_R" "S1_fs_R")
-exclude=("BStem" "WM_fs_L" "CC_fs_all" "Temp_wm_fs_R" "Front_wm_fs_R" "vDC_fs_L" "putamen_dil_fs_R" "accumbens_dil_fs_R")
-theta=50
-stop=$(printf " -backtrack -crop_at_gmwmi")
-act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# nods=6000
+# tract="FAT_R_nods${nods}"
+# seeds=("IFG_POp_wm_fs_R" "SFG_fs_R")
+# exclude=("IFG_PTr_wm_fs_R" "M1_fs_R" "WM_fs_L" "CC_fs_all" "Ins_fs_R" "putamen_dil_fs_R")
+# theta=60
+# stop=$(printf " -backtrack -crop_at_gmwmi")
+# act=$(printf " -act %s" "${fs_5tt[@]}")
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
+# #
+# # ATR
+# # exclude the hippocampi, insulae, par and temp wm as well as vDC
+# # try using -stop and -act
+# nods=3000
+# tract="ATR_R_nods${nods}"
+# seeds=("THALAMUS_fs_R" "L_OF_wm_fs_R")
+# exclude=("BStem" "WM_fs_L" "CC_fs_all" "Temp_wm_fs_R" "putamen_dil_fs_R" "Ins_wm_fs_R" "vDC_fs_R")
+# theta=50
+# stop=$(printf " -backtrack -crop_at_gmwmi")
+# act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-nods=3000
-tract="STR_L_nods${nods}"
-seeds=("THALAMUS_fs_L" "Par_wm_fs_L" "SPL_fs_L" "S1_fs_L")
-exclude=("BStem" "WM_fs_R" "CC_fs_all" "Temp_wm_fs_L" "Front_wm_fs_L" "vDC_fs_L" "putamen_dil_fs_L" "accumbens_dil_fs_L")
-theta=50
-stop=$(printf " -backtrack -crop_at_gmwmi")
-act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# nods=3000
+# tract="ATR_L_nods${nods}"
+# seeds=("THALAMUS_fs_L" "L_OF_wm_fs_L")
+# exclude=("BStem" "WM_fs_R" "CC_fs_all" "Temp_wm_fs_L" "putamen_dil_fs_L" "Ins_wm_fs_L" "vDC_fs_L")
+# theta=50
+# stop=$(printf " -backtrack -crop_at_gmwmi")
+# act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
+
+# # STR
+# # needs occ wm and vDC as excludes still
+# nods=3000
+# tract="STR_R_nods${nods}"
+# seeds=("THALAMUS_fs_R" "Par_wm_fs_R" "SPL_fs_R" "S1_fs_R")
+# exclude=("BStem" "WM_fs_L" "CC_fs_all" "Temp_wm_fs_R" "Front_wm_fs_R" "vDC_fs_L" "putamen_dil_fs_R" "accumbens_dil_fs_R")
+# theta=50
+# stop=$(printf " -backtrack -crop_at_gmwmi")
+# act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
+
+# nods=3000
+# tract="STR_L_nods${nods}"
+# seeds=("THALAMUS_fs_L" "Par_wm_fs_L" "SPL_fs_L" "S1_fs_L")
+# exclude=("BStem" "WM_fs_R" "CC_fs_all" "Temp_wm_fs_L" "Front_wm_fs_L" "vDC_fs_L" "putamen_dil_fs_L" "accumbens_dil_fs_L")
+# theta=50
+# stop=$(printf " -backtrack -crop_at_gmwmi")
+# act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
 # OT
 nods=1000
@@ -1103,65 +1105,65 @@ stop=$(printf " -backtrack -crop_at_gmwmi")
 act=$(printf " -act %s" "${fs_5tt[@]}")
 kul_mrtrix_FT
 
-# IFOF
-# now trying without the temporal lobe as exclude
-nods=6000
-tract="IFOF_R_nods${nods}"
-seeds=("Occ_wm_fs_R" "L_OF_wm_fs_R")
-exclude=("WM_fs_L" "CC_fs_all" "BStem" "THALAMUS_fs_R" "Caudate_fs_R" "Phip_wm_fs_R")
-theta=60
-stop=()
-act=()
-kul_mrtrix_FT
+# # IFOF
+# # now trying without the temporal lobe as exclude
+# nods=6000
+# tract="IFOF_R_nods${nods}"
+# seeds=("Occ_wm_fs_R" "L_OF_wm_fs_R")
+# exclude=("WM_fs_L" "CC_fs_all" "BStem" "THALAMUS_fs_R" "Caudate_fs_R" "Phip_wm_fs_R")
+# theta=60
+# stop=()
+# act=()
+# kul_mrtrix_FT
 
-nods=6000
-tract="IFOF_L_nods${nods}"
-seeds=("Occ_wm_fs_L" "L_OF_wm_fs_L")
-exclude=("WM_fs_R" "CC_fs_all" "BStem" "THALAMUS_fs_L" "Caudate_fs_L" "Phip_wm_fs_L")
-theta=60
-stop=()
-act=()
-kul_mrtrix_FT
+# nods=6000
+# tract="IFOF_L_nods${nods}"
+# seeds=("Occ_wm_fs_L" "L_OF_wm_fs_L")
+# exclude=("WM_fs_R" "CC_fs_all" "BStem" "THALAMUS_fs_L" "Caudate_fs_L" "Phip_wm_fs_L")
+# theta=60
+# stop=()
+# act=()
+# kul_mrtrix_FT
 
-# ILF
-# needs ITG as the include ROI in the temporal lobe
-nods=6000
-tract="ILF_R_nods${nods}"
-seeds=("Occ_wm_fs_R" "ITG_wm_fs_R" "ITG_fs_R")
-exclude=("WM_fs_L" "CC_fs_all" "Front_wm_fs_R" "THALAMUS_fs_R" "Caudate_fs_R" "unseg_wm_fs_R" "Phip_wm_fs_R")
-theta=45
-stop=()
-act=()
-kul_mrtrix_FT
+# # ILF
+# # needs ITG as the include ROI in the temporal lobe
+# nods=6000
+# tract="ILF_R_nods${nods}"
+# seeds=("Occ_wm_fs_R" "ITG_wm_fs_R" "ITG_fs_R")
+# exclude=("WM_fs_L" "CC_fs_all" "Front_wm_fs_R" "THALAMUS_fs_R" "Caudate_fs_R" "unseg_wm_fs_R" "Phip_wm_fs_R")
+# theta=45
+# stop=()
+# act=()
+# kul_mrtrix_FT
 
-nods=6000
-tract="ILF_L_nods${nods}"
-seeds=("Occ_wm_fs_L" "ITG_wm_fs_L" "ITG_fs_L")
-exclude=("WM_fs_R" "CC_fs_all" "Front_wm_fs_L" "THALAMUS_fs_L" "Caudate_fs_L" "unseg_wm_fs_L" "Phip_wm_fs_L")
-theta=45
-stop=()
-act=()
-kul_mrtrix_FT
+# nods=6000
+# tract="ILF_L_nods${nods}"
+# seeds=("Occ_wm_fs_L" "ITG_wm_fs_L" "ITG_fs_L")
+# exclude=("WM_fs_R" "CC_fs_all" "Front_wm_fs_L" "THALAMUS_fs_L" "Caudate_fs_L" "unseg_wm_fs_L" "Phip_wm_fs_L")
+# theta=45
+# stop=()
+# act=()
+# kul_mrtrix_FT
 
-# MLF
-# need to also add MLF with MTG as the include of temporal lobe.
-nods=6000
-tract="MLF_R_nods${nods}"
-seeds=("Occ_wm_fs_R" "MTG_wm_fs_R" "MTG_fs_R")
-exclude=("WM_fs_L" "CC_fs_all" "Front_wm_fs_R" "THALAMUS_fs_R" "Caudate_fs_R" "unseg_wm_fs_R" "Phip_wm_fs_R")
-theta=45
-stop=()
-act=()
-kul_mrtrix_FT
+# # MLF
+# # need to also add MLF with MTG as the include of temporal lobe.
+# nods=6000
+# tract="MLF_R_nods${nods}"
+# seeds=("Occ_wm_fs_R" "MTG_wm_fs_R" "MTG_fs_R")
+# exclude=("WM_fs_L" "CC_fs_all" "Front_wm_fs_R" "THALAMUS_fs_R" "Caudate_fs_R" "unseg_wm_fs_R" "Phip_wm_fs_R")
+# theta=45
+# stop=()
+# act=()
+# kul_mrtrix_FT
 
-nods=6000
-tract="MLF_L_nods${nods}"
-seeds=("Occ_wm_fs_L" "MTG_wm_fs_L" "MTG_fs_L")
-exclude=("WM_fs_R" "CC_fs_all" "Front_wm_fs_L" "THALAMUS_fs_L" "Caudate_fs_L" "unseg_wm_fs_L" "Phip_wm_fs_L")
-theta=45
-stop=()
-act=()
-kul_mrtrix_FT
+# nods=6000
+# tract="MLF_L_nods${nods}"
+# seeds=("Occ_wm_fs_L" "MTG_wm_fs_L" "MTG_fs_L")
+# exclude=("WM_fs_R" "CC_fs_all" "Front_wm_fs_L" "THALAMUS_fs_L" "Caudate_fs_L" "unseg_wm_fs_L" "Phip_wm_fs_L")
+# theta=45
+# stop=()
+# act=()
+# kul_mrtrix_FT
 
 # SLF
 nods=6000
@@ -1182,110 +1184,110 @@ stop=-stop
 act=()
 kul_mrtrix_FT
 
-# UF
-nods=5000
-tract="UF_L_nods${nods}"
-seeds=("L_OF_fs_L" "L_OF_wm_fs_L" "TP_wm_fs_L")
-exclude=("WM_fs_R" "CC_fs_all" "BStem" "THALAMUS_fs_L" "Caudate_fs_L" "CSF_ants" "unseg_wm_fs_L" "accumbens_dil_fs_L")
-theta=60
-stop=()
-act=()
-# act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# # UF
+# nods=5000
+# tract="UF_L_nods${nods}"
+# seeds=("L_OF_fs_L" "L_OF_wm_fs_L" "TP_wm_fs_L")
+# exclude=("WM_fs_R" "CC_fs_all" "BStem" "THALAMUS_fs_L" "Caudate_fs_L" "CSF_ants" "unseg_wm_fs_L" "accumbens_dil_fs_L")
+# theta=60
+# stop=()
+# act=()
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-nods=5000
-tract="UF_R_nods${nods}"
-seeds=("L_OF_fs_R" "L_OF_wm_fs_R" "TP_wm_fs_R")
-exclude=("WM_fs_L" "CC_fs_all" "BStem" "THALAMUS_fs_R" "Caudate_fs_R" "CSF_ants" "unseg_wm_fs_R" "accumbens_dil_fs_R")
-theta=60
-stop=()
-act=()
-# act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# nods=5000
+# tract="UF_R_nods${nods}"
+# seeds=("L_OF_fs_R" "L_OF_wm_fs_R" "TP_wm_fs_R")
+# exclude=("WM_fs_L" "CC_fs_all" "BStem" "THALAMUS_fs_R" "Caudate_fs_R" "CSF_ants" "unseg_wm_fs_R" "accumbens_dil_fs_R")
+# theta=60
+# stop=()
+# act=()
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-# TIF
-nods=3000
-tract="TIF_L_nods${nods}"
-seeds=("Ins_fs_L" "Ins_wm_fs_L" "TP_wm_fs_L")
-exclude=("WM_fs_R" "CC_fs_all" "BStem" "THALAMUS_fs_R" "Front_wm_fs_L" "CSF_ants" "unseg_wm_fs_L" "Amyg_fs_L")
-theta=60
-stop=()
-act=()
-# act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# # TIF
+# nods=3000
+# tract="TIF_L_nods${nods}"
+# seeds=("Ins_fs_L" "Ins_wm_fs_L" "TP_wm_fs_L")
+# exclude=("WM_fs_R" "CC_fs_all" "BStem" "THALAMUS_fs_R" "Front_wm_fs_L" "CSF_ants" "unseg_wm_fs_L" "Amyg_fs_L")
+# theta=60
+# stop=()
+# act=()
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-nods=3000
-tract="TIF_R_nods${nods}"
-seeds=("Ins_fs_R" "Ins_wm_fs_R" "TP_wm_fs_R")
-exclude=("WM_fs_L" "CC_fs_all" "BStem" "THALAMUS_fs_R" "Front_wm_fs_R" "CSF_ants" "unseg_wm_fs_R" "Amyg_fs_R")
-theta=60
-stop=()
-act=()
-# act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# nods=3000
+# tract="TIF_R_nods${nods}"
+# seeds=("Ins_fs_R" "Ins_wm_fs_R" "TP_wm_fs_R")
+# exclude=("WM_fs_L" "CC_fs_all" "BStem" "THALAMUS_fs_R" "Front_wm_fs_R" "CSF_ants" "unseg_wm_fs_R" "Amyg_fs_R")
+# theta=60
+# stop=()
+# act=()
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-# AIF
-nods=2000
-tract="AIF_L_nods${nods}"
-seeds=("Ins_fs_L" "Amyg_fs_L" "TP_wm_fs_L")
-exclude=("WM_fs_R" "CC_fs_all" "BStem" "THALAMUS_fs_R" "CSF_ants" "unseg_wm_fs_L")
-theta=60
-stop=()
-act=()
-# act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# # AIF
+# nods=2000
+# tract="AIF_L_nods${nods}"
+# seeds=("Ins_fs_L" "Amyg_fs_L" "TP_wm_fs_L")
+# exclude=("WM_fs_R" "CC_fs_all" "BStem" "THALAMUS_fs_R" "CSF_ants" "unseg_wm_fs_L")
+# theta=60
+# stop=()
+# act=()
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-nods=2000
-tract="AIF_R_nods${nods}"
-seeds=("Ins_fs_R" "Amyg_fs_R" "TP_wm_fs_R")
-exclude=("WM_fs_L" "CC_fs_all" "BStem" "THALAMUS_fs_R" "CSF_ants" "unseg_wm_fs_R")
-theta=60
-stop=()
-act=()
-# act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# nods=2000
+# tract="AIF_R_nods${nods}"
+# seeds=("Ins_fs_R" "Amyg_fs_R" "TP_wm_fs_R")
+# exclude=("WM_fs_L" "CC_fs_all" "BStem" "THALAMUS_fs_R" "CSF_ants" "unseg_wm_fs_R")
+# theta=60
+# stop=()
+# act=()
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-# Cingulum
-nods=6000
-tract="cCing_R_nods${nods}"
-seeds=("cACC_fs_R" "rACC_fs_R" "PCC_fs_R" "iPCC_fs_R")
-exclude=("WM_fs_L" "CC_fs_all" "unseg_wm_fs_R" "STG_wm_fs_R")
-theta=50
-stop=-stop
-act=()
-# act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# # Cingulum
+# nods=6000
+# tract="cCing_R_nods${nods}"
+# seeds=("cACC_fs_R" "rACC_fs_R" "PCC_fs_R" "iPCC_fs_R")
+# exclude=("WM_fs_L" "CC_fs_all" "unseg_wm_fs_R" "STG_wm_fs_R")
+# theta=50
+# stop=-stop
+# act=()
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-nods=6000
-tract="cCing_L_nods${nods}"
-seeds=("cACC_fs_L" "rACC_fs_L" "PCC_fs_L" "iPCC_fs_L")
-exclude=("WM_fs_R" "CC_fs_all" "unseg_wm_fs_L" "STG_wm_fs_L")
-theta=50
-stop=-stop
-act=()
-# act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# nods=6000
+# tract="cCing_L_nods${nods}"
+# seeds=("cACC_fs_L" "rACC_fs_L" "PCC_fs_L" "iPCC_fs_L")
+# exclude=("WM_fs_R" "CC_fs_all" "unseg_wm_fs_L" "STG_wm_fs_L")
+# theta=50
+# stop=-stop
+# act=()
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-nods=4000
-# wm post. cing needs to be added here
-tract="pCing_R_nods${nods}"
-seeds=("Hippo_fs_R" "iPCC_fs_R" "Phip_wm_fs_R")
-exclude=("WM_fs_L" "CC_fs_all" "unseg_wm_fs_R" "PCC_wm_fs_R" "fusiform_wm_fs_R")
-theta=50
-stop=-stop
-act=()
-# act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# nods=4000
+# # wm post. cing needs to be added here
+# tract="pCing_R_nods${nods}"
+# seeds=("Hippo_fs_R" "iPCC_fs_R" "Phip_wm_fs_R")
+# exclude=("WM_fs_L" "CC_fs_all" "unseg_wm_fs_R" "PCC_wm_fs_R" "fusiform_wm_fs_R")
+# theta=50
+# stop=-stop
+# act=()
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
-nods=4000
-tract="pCing_L_nods${nods}"
-seeds=("Hippo_fs_L" "iPCC_fs_L" "Phip_wm_fs_L")
-exclude=("WM_fs_R" "CC_fs_all" "unseg_wm_fs_L" "PCC_wm_fs_L" "fusiform_wm_fs_L")
-theta=50
-stop=-stop
-act=()
-# act=$(printf " -act %s" "${fs_5tt[@]}")
-kul_mrtrix_FT
+# nods=4000
+# tract="pCing_L_nods${nods}"
+# seeds=("Hippo_fs_L" "iPCC_fs_L" "Phip_wm_fs_L")
+# exclude=("WM_fs_R" "CC_fs_all" "unseg_wm_fs_L" "PCC_wm_fs_L" "fusiform_wm_fs_L")
+# theta=50
+# stop=-stop
+# act=()
+# # act=$(printf " -act %s" "${fs_5tt[@]}")
+# kul_mrtrix_FT
 
 # Now prepare the data for iPlan
 # if [ ! -f for_iplan/TH_SMAPMC_R.hdr ]; then
