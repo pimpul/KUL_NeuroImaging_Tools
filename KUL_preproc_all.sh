@@ -174,6 +174,7 @@ fi
 
 
 # A function to start fmriprep processing (in parallel)
+# A.R. 03/04/0291 using fmriprep:1.2.6 instead of latest
 function task_fmriprep {
 
 # check if already performed fmriprep
@@ -190,7 +191,7 @@ if [ ! -f $fmriprep_file_to_check ]; then
  -v ${cwd}:/out \
  -v ${cwd}/fmriprep_work:/scratch \
  -v /KUL_apps/freesurfer/license.txt:/opt/freesurfer/license.txt \
- poldracklab/fmriprep:latest \
+ poldracklab/fmriprep:1.2.6 \
  --participant_label ${BIDS_participant} \
  -w /scratch \
  --nthreads $ncpu_fmriprep --omp-nthreads $ncpu_fmriprep_ants \
@@ -211,7 +212,7 @@ if [ ! -f $fmriprep_file_to_check ]; then
 
     sleep 2
     
-    kul_e2cl "   done fmriprep on participant $BIDS_participant" $log
+    #kul_e2cl "   done fmriprep on participant $BIDS_participant" $log
 
 else
         

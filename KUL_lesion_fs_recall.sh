@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# set -x
+set -x
 
 # Ahmed Radwan ahmed.radwan@kuleuven.be
 # Stefan Sunaert  stefan.sunaert@kuleuven.be
@@ -533,6 +533,10 @@ L_mask_in_MNI_dil_binv=${preproc}/sub-${subj}${ses_long}_L_mask_dil_binv_in_MNI.
 
 MNI_mask_min_lesion=${preproc}/sub-${subj}${ses_long}_MNI_mask_min_lesion.nii.gz
 
+lesion_left_overlap=${preproc}/sub-${subj}${ses_long}_lesion_left_overlap.nii.gz
+
+lesion_right_overlap=${preproc}/sub-${subj}${ses_long}_lesion_right_overlap.nii.gz
+
 lesion_left_hemi_overlap=${preproc}/sub-${subj}${ses_long}_lesion_left_hemi_overlap.nii.gz
 
 lesion_left_hemi_overlap_binv=${preproc}/sub-${subj}${ses_long}_lesion_left_hemi_overlap_binv.nii.gz
@@ -864,9 +868,6 @@ else
 	
 fi
 
-	
-
-
 	# L_mask_in_T1=($(find ${preproc} -type f | grep _to_T1.nii.gz));
 
 	# all workflows collapse to this same step at this point
@@ -895,7 +896,10 @@ fi
 	T1_real_right_hemi=${preproc}/T1_real_right_hemi.nii.gz
 	T2_real_right_hemi=${preproc}/T2_real_right_hemi.nii.gz
 	FLAIR_real_right_hemi=${preproc}/FLAIR_real_right_hemi.nii.gz
-	
+
+	T1_real_left_hemi_mask=${preproc}/T1_real_left_hemi_mask.nii.gz
+
+
 	T1_real_left_hemi_mask_min_lesion=${preproc}/T1_real_left_hemi_mask_min_lesion.nii.gz
 	T2_real_left_hemi_mask_min_lesion=${preproc}/T2_real_left_hemi_mask_min_lesion.nii.gz
 	FLAIR_real_left_hemi_mask_min_lesion=${preproc}/FLAIR_real_left_hemi_mask_min_lesion.nii.gz
@@ -922,13 +926,12 @@ fi
 if [[ ! $search_wf_mark3 ]]; then 
 		
 	fslmaths $MNI_rl -thr 100 -uthr 100 -bin $MNI_left
-	fslmaths $MNI_left -mas $L_mask_in_MNI_dil $lesion_left_hemi_overlap
-	fslmaths $lesion_left_hemi_overlap -binv $lesion_left_hemi_overlap_binv
-	overlap_left="$(fslstats $lesion_left_hemi_overlap -V | head -n1 | cut -d " " -f1)"
+	fslmaths $MNI_left -mas $L_mask_in_MNI_dil $lesion_left_overlap
+	overlap_left="$(fslstats $lesion_left_overlap -V | head -n1 | cut -d " " -f1)"
 
 	fslmaths $MNI_rl -thr 1 -uthr 1 -bin $MNI_right
-	fslmaths $MNI_right -mas $L_mask_in_MNI_dil $lesion_right_hemi_overlap
-	overlap_right="$(fslstats $lesion_right_hemi_overlap -V | head -n1 | cut -d " " -f1)"
+	fslmaths $MNI_right -mas $L_mask_in_MNI_dil $lesion_right_overlap
+	overlap_right="$(fslstats $lesion_right_overlap -V | head -n1 | cut -d " " -f1)"
 
 	fslmaths $L_mask_in_T1 -binv $L_mask_binv_in_T1
 	fslmaths $MNI_brain_mask_in_nat -mas $L_mask_binv_in_T1 $MNI_brain_mask_in_nat_min_lesion
@@ -945,7 +948,13 @@ if [[ ! $search_wf_mark3 ]]; then
 
 		fslmaths $T1_in_MNI_brain -mas $MNI_left $T1_real_left_hemi
 
-		fslmaths $T1_real_left_hemi -bin -mas $lesion_left_hemi_overlap_binv $T1_real_left_hemi_mask_min_lesion
+		fslmaths $T1_real_left_hemi -bin $T1_real_left_hemi_mask
+
+		fslmaths $T1_real_left_hemi_mask -mas $L_mask_in_MNI_dil $lesion_left_hemi_overlap
+
+		fslmaths $lesion_left_hemi_overlap -binv $lesion_left_hemi_overlap_binv
+
+		fslmaths $T1_real_left_hemi_mask -mas $lesion_left_hemi_overlap_binv $T1_real_left_hemi_mask_min_lesion
 
 		antsRegistrationSyN.sh -d 3 -f $T1_real_left_hemi -m $T1_fake_left_hemi -t s \
 			-x $T1_real_left_hemi_mask_min_lesion,$T1_fake_left_hemi_mask -o ${preproc}/sub-${subj}${ses_long}_T1_left_fake_2_real_hemi -n ${ncpu}
@@ -954,8 +963,10 @@ if [[ ! $search_wf_mark3 ]]; then
 
 		fslmaths $T1_in_MNI -mas $lesion_left_hemi_overlap_binv -add $T1_lesion_fill $T1_with_lesion_fill_MNI
 
-		antsRegistrationSyN.sh -d 3 -f $T1_orig -m $T1_with_lesion_fill_MNI -t a \
-			-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T1_sim_lesionless_ -n ${ncpu}
+		WarpImageMultiTransform 3 $T1_with_lesion_fill_MNI ${output}/sub-${subj}${ses_long}_T1nat_T1_sim_lesionless_Warped.nii.gz -R $T1_orig -i $T1_to_MNI_affine
+
+		# antsRegistrationSyN.sh -d 3 -f $T1_orig -m $T1_with_lesion_fill_MNI -t a \
+		# 	-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T1_sim_lesionless_ -n ${ncpu}
 
 		if [[ $wf -eq 1 ]] ; then
 
@@ -974,8 +985,10 @@ if [[ ! $search_wf_mark3 ]]; then
 
 			fslmaths $T2_in_MNI -mas $lesion_left_hemi_overlap_binv -add $T2_lesion_fill $T2_with_lesion_fill_MNI
 
-			antsRegistrationSyN.sh -d 3 -f $T2_in_T1 -m $T2_with_lesion_fill_MNI -t a \
-				-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_ -n ${ncpu}
+			WarpImageMultiTransform 3 $T2_with_lesion_fill_MNI ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_Warped.nii.gz -R $T1_orig -i $T1_to_MNI_affine
+
+			# antsRegistrationSyN.sh -d 3 -f $T2_in_T1 -m $T2_with_lesion_fill_MNI -t a \
+			# 	-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_ -n ${ncpu}
 
 		elif [[ $wf -eq 2 ]] ; then
 
@@ -994,8 +1007,10 @@ if [[ ! $search_wf_mark3 ]]; then
 
 			fslmaths $FLAIR_in_MNI -mas $lesion_left_hemi_overlap_binv -add $FLAIR_lesion_fill $FLAIR_with_lesion_fill_MNI
 
-			antsRegistrationSyN.sh -d 3 -f $FLAIR_in_T1 -m $FLAIR_with_lesion_fill_MNI -t a \
-				-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_ -n ${ncpu}
+			WarpImageMultiTransform 3 $FLAIR_with_lesion_fill_MNI ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_Warped.nii.gz -R $T1_orig -i $T1_to_MNI_affine
+
+			# antsRegistrationSyN.sh -d 3 -f $FLAIR_in_T1 -m $FLAIR_with_lesion_fill_MNI -t a \
+			# 	-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_ -n ${ncpu}
 
 		elif [[ $wf -eq 3 ]] ; then
 
@@ -1014,8 +1029,10 @@ if [[ ! $search_wf_mark3 ]]; then
 
 			fslmaths $T2_in_MNI -mas $lesion_left_hemi_overlap_binv -add $T2_lesion_fill $T2_with_lesion_fill_MNI
 
-			antsRegistrationSyN.sh -d 3 -f $T2_in_T1 -m $T2_with_lesion_fill_MNI -t a \
-				-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_ -n ${ncpu}
+			WarpImageMultiTransform 3 $T2_with_lesion_fill_MNI ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_Warped.nii.gz -R $T1_orig -i $T1_to_MNI_affine
+
+			# antsRegistrationSyN.sh -d 3 -f $T2_in_T1 -m $T2_with_lesion_fill_MNI -t a \
+			# 	-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_ -n ${ncpu}
 
 			fslmaths $FLAIR_in_MNI_SyN_brain_flip -mas $MNI_left $FLAIR_fake_left_hemi
 
@@ -1032,8 +1049,10 @@ if [[ ! $search_wf_mark3 ]]; then
 
 			fslmaths $FLAIR_in_MNI -mas $lesion_left_hemi_overlap_binv -add $FLAIR_lesion_fill $FLAIR_with_lesion_fill_MNI
 
-			antsRegistrationSyN.sh -d 3 -f $FLAIR_in_T1 -m $FLAIR_with_lesion_fill_MNI -t a \
-				-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_ -n ${ncpu}
+			WarpImageMultiTransform 3 $FLAIR_with_lesion_fill_MNI ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_Warped.nii.gz -R $T1_orig -i $T1_to_MNI_affine
+
+			# antsRegistrationSyN.sh -d 3 -f $FLAIR_in_T1 -m $FLAIR_with_lesion_fill_MNI -t a \
+			# 	-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_ -n ${ncpu}
 
 		fi
 
@@ -1047,7 +1066,13 @@ if [[ ! $search_wf_mark3 ]]; then
 
 		fslmaths $T1_in_MNI_brain -mas $MNI_right $T1_real_right_hemi
 
-		fslmaths $T1_real_right_hemi -bin -mas $lesion_right_hemi_overlap_binv $T1_real_right_hemi_mask_min_lesion
+		fslmaths $T1_real_right_hemi -bin $T1_real_right_hemi_mask
+
+		fslmaths $T1_real_right_hemi_mask -mas $L_mask_in_MNI_dil $lesion_right_hemi_overlap
+
+		fslmaths $lesion_right_hemi_overlap -binv $lesion_right_hemi_overlap_binv
+
+		fslmaths $T1_real_right_hemi_mask -mas $lesion_right_hemi_overlap_binv $T1_real_right_hemi_mask_min_lesion
 
 		antsRegistrationSyN.sh -d 3 -f $T1_real_right_hemi -m $T1_fake_right_hemi -t s \
 			-x $T1_real_right_hemi_mask_min_lesion,$T1_fake_right_hemi_mask -o ${preproc}/sub-${subj}${ses_long}_T1_right_fake_2_real_hemi -n ${ncpu}
@@ -1056,8 +1081,10 @@ if [[ ! $search_wf_mark3 ]]; then
 
 		fslmaths $T1_in_MNI -mas $lesion_right_hemi_overlap_binv -add $T1_lesion_fill $T1_with_lesion_fill_MNI
 
-		antsRegistrationSyN.sh -d 3 -f $T1_orig -m $T1_with_lesion_fill_MNI -t a \
-			-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T1_sim_lesionless_ -n ${ncpu}
+		WarpImageMultiTransform 3 $T1_with_lesion_fill_MNI ${output}/sub-${subj}${ses_long}_T1nat_T1_sim_lesionless_Warped.nii.gz -R $T1_orig -i $T1_to_MNI_affine
+
+		# antsRegistrationSyN.sh -d 3 -f $T1_orig -m $T1_with_lesion_fill_MNI -t a \
+		# 	-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T1_sim_lesionless_ -n ${ncpu}
 
 		if [[ $wf -eq 1 ]] ; then
 
@@ -1076,8 +1103,10 @@ if [[ ! $search_wf_mark3 ]]; then
 
 			fslmaths $T2_in_MNI -mas $lesion_right_hemi_overlap_binv -add $T2_lesion_fill $T2_with_lesion_fill_MNI
 
-			antsRegistrationSyN.sh -d 3 -f $T2_in_T1 -m $T2_with_lesion_fill_MNI -t a \
-				-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_ -n ${ncpu}
+			WarpImageMultiTransform 3 $T2_with_lesion_fill_MNI ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_Warped.nii.gz -R $T1_orig -i $T1_to_MNI_affine
+
+			# antsRegistrationSyN.sh -d 3 -f $T2_in_T1 -m $T2_with_lesion_fill_MNI -t a \
+			# 	-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_ -n ${ncpu}
 
 		elif [[ $wf -eq 2 ]] ; then
 
@@ -1096,8 +1125,10 @@ if [[ ! $search_wf_mark3 ]]; then
 
 			fslmaths $FLAIR_in_MNI -mas $lesion_right_hemi_overlap_binv -add $FLAIR_lesion_fill $FLAIR_with_lesion_fill_MNI
 
-			antsRegistrationSyN.sh -d 3 -f $FLAIR_in_T1 -m $FLAIR_with_lesion_fill_MNI -t a \
-				-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_ -n ${ncpu}
+			WarpImageMultiTransform 3 $FLAIR_with_lesion_fill_MNI ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_Warped.nii.gz -R $T1_orig -i $T1_to_MNI_affine
+
+			# antsRegistrationSyN.sh -d 3 -f $FLAIR_in_T1 -m $FLAIR_with_lesion_fill_MNI -t a \
+			# 	-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_ -n ${ncpu}
 
 		elif [[ $wf -eq 3 ]] ; then
 
@@ -1112,26 +1143,28 @@ if [[ ! $search_wf_mark3 ]]; then
 			antsRegistrationSyN.sh -d 3 -f $T2_real_right_hemi -m $T2_fake_right_hemi -t s \
 				-x $T2_real_right_hemi_mask_min_lesion,$T2_fake_right_hemi_mask -o ${preproc}/sub-${subj}${ses_long}_T2_right_fake_2_real_hemi -n ${ncpu}
 
-			ImageMath 3 $T2_right_fake_2_real_hemi_SyN_sharp Sharpen $T2_right_fake_2_real_hemi_SyN
+			# ImageMath 3 $T2_right_fake_2_real_hemi_SyN_sharp Sharpen $T2_right_fake_2_real_hemi_SyN
 
 			fslmaths $T2_right_fake_2_real_hemi_SyN -mas $lesion_right_hemi_overlap $T2_lesion_fill
 
-			fslmaths $T2_right_fake_2_real_hemi_SyN_sharp -mas $lesion_right_hemi_overlap $T2_lesion_fill_sharp
+			# fslmaths $T2_right_fake_2_real_hemi_SyN_sharp -mas $lesion_right_hemi_overlap $T2_lesion_fill_sharp
 
 			fslmaths $T2_in_MNI -mas $lesion_right_hemi_overlap_binv -add $T2_lesion_fill $T2_with_lesion_fill_MNI
 
-			ImageMath 3 $T2_in_MNI_sharp Sharpen $T2_in_MNI
+			# ImageMath 3 $T2_in_MNI_sharp Sharpen $T2_in_MNI
 
 			fslmaths $T2_in_MNI_sharp -mas $lesion_right_hemi_overlap_binv -add $T2_lesion_fill_sharp $T2_with_lesion_fill_MNI
 
-			T2_in_MNI_sharp=""
+			# T2_in_MNI_sharp=""
 
-			T2_lesion_fill_sharp=""
+			# T2_lesion_fill_sharp=""
 
-			T2_right_fake_2_real_hemi_SyN_sharp=""
+			# T2_right_fake_2_real_hemi_SyN_sharp=""
 
-			antsRegistrationSyN.sh -d 3 -f $T2_in_T1 -m $T2_with_lesion_fill_MNI -t a \
-				-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_ -n ${ncpu}
+			WarpImageMultiTransform 3 $T2_with_lesion_fill_MNI ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_Warped.nii.gz -R $T1_orig -i $T1_to_MNI_affine
+
+			# antsRegistrationSyN.sh -d 3 -f $T2_in_T1 -m $T2_with_lesion_fill_MNI -t a \
+			# 	-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_T2_sim_lesionless_ -n ${ncpu}
 
 			fslmaths $FLAIR_in_MNI_SyN_brain_flip -mas $MNI_right $FLAIR_fake_right_hemi
 
@@ -1148,8 +1181,10 @@ if [[ ! $search_wf_mark3 ]]; then
 
 			fslmaths $FLAIR_in_MNI -mas $lesion_right_hemi_overlap_binv -add $FLAIR_lesion_fill $FLAIR_with_lesion_fill_MNI
 
-			antsRegistrationSyN.sh -d 3 -f $FLAIR_in_T1 -m $FLAIR_with_lesion_fill_MNI -t a \
-				-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_ -n ${ncpu}
+			WarpImageMultiTransform 3 $FLAIR_with_lesion_fill_MNI ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_Warped.nii.gz -R $T1_orig -i $T1_to_MNI_affine
+
+			# antsRegistrationSyN.sh -d 3 -f $FLAIR_in_T1 -m $FLAIR_with_lesion_fill_MNI -t a \
+			# 	-x $MNI_brain_mask_in_nat_min_lesion,$MNI_mask_min_lesion -o ${output}/sub-${subj}${ses_long}_T1nat_FLAIR_sim_lesionless_ -n ${ncpu}
 
 		fi
 		
